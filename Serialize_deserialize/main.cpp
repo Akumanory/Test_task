@@ -8,40 +8,27 @@ int main()
     List test;
 
     test.InsertTail("test_1");
-    test.InsertTail("test_2");
+    test.InsertTail("test_2", test.AtIndex(0));
+    test.InsertTail("test_3");
+    test.InsertTail("test_4", test.AtIndex(1));
+    test.InsertTail("test_5");
+    test.InsertHead("test_6", test.AtIndex(1));
 
-    FILE* file_write = std::fopen("files/test_w", "wb");
-    test.Serialize(file_write);
+    std::cout << "Before" << std::endl;
+    test.PrintList();
 
-    FILE* file_read = std::fopen("files/test_w", "rb");
-    test.Deserialize(file_read);
+    FILE * write_file = std::fopen("files/test_w", "wb");
 
-    // std::cout << test.AtIndex(1)->data << std::endl;
+    test.Serialize(write_file);
+    std::fclose(write_file);
 
-    // test.InsertTail("test_3");
-    // test.PrintList();
+    FILE * read_file = std::fopen("files/test_w", "rb");
 
+    test.Deserialize(read_file);
+    std::fclose(read_file);
 
-
-    // std::cout << "Size: " << test.Size() << std::endl;
-
-    // for (auto it = test.iterator(); it.has_next(); it.next())
-    // {
-    //     auto temp = it.get();
-
-    //     std::cout << "Str: " << temp->data << std::endl;
-    //     if (temp->rand == nullptr)
-    //     {
-    //         std::cout << "Rand is nullptr"  << std::endl;
-    //     }
-    //     else
-    //     {
-    //         std::cout << "Rand is pointing on something"  << std::endl;
-    //     }
-    // }
-
-
-
+    std::cout << "After" << std::endl;
+    test.PrintList();
 
     return 0;
 }

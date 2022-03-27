@@ -116,12 +116,14 @@ int List::Size() const
 
 void List::PrintList()
 {
-    ListNode * temp = head;
+    for (auto it = iterator(); it.has_next(); it.next())
+    {
+        auto temp = it.get();
 
-    while (head != tail){
-        std::cout << "Str: " << head->data << std::endl;
 
-        if (head->rand == nullptr)
+        std::cout << "Str: " << temp->data << std::endl;
+
+        if (temp->rand == nullptr)
         {
             std::cout << "Rand is nullptr"  << std::endl;
         }
@@ -129,23 +131,7 @@ void List::PrintList()
         {
             std::cout << "Rand is pointing on something"  << std::endl;
         }
-        head = head->next;
     }
-
-    std::cout << "Str: " << head->data << std::endl;
-
-    if (head->rand == nullptr)
-    {
-        std::cout << "Rand is nullptr"  << std::endl;
-    }
-    else
-    {
-        std::cout << "Rand is pointing on something"  << std::endl;
-    }
-
-    std::cout << std::endl;
-
-    head = temp;
 }
 
 void List::Serialize(FILE * file)
@@ -153,45 +139,49 @@ void List::Serialize(FILE * file)
     if (file == NULL)
     {
         std::cout << "Error opening file for writing" << std::endl;
+        return;
     }
     else
     {
         std::cout << "Sucsess opening file for writing" << std::endl;
     }
-
+    // count
     std::fwrite(&count, sizeof(int), 1, file); // count in file
-    // data
 
+    // data
     for (auto it = iterator(); it.has_next(); it.next())
     {
         auto temp = it.get();
-        std::fwrite(&(temp->data), sizeof(temp->data), 1, file);
+        int size = temp->data.size();
+        std::fwrite(&size, sizeof(int), 1, file);
+        std::fwrite(temp->data.c_str(), sizeof(char), size, file);
     }
 
-    // idex for rand
-    // for (auto it = iterator(); it.has_next(); it.next())
-    // {
-    //     auto temp = it.get();
-    //     if (temp->rand == nullptr)
-    //     {
-    //         int num = -1;
-    //         std::fwrite(&num, sizeof(int), 1, file);
-    //     }
-    //     else
-    //     {
-    //         int count = 0;
-    //         for (auto it2 = this->iterator(); it2.has_next(); it2.next())
-    //         {
-    //             auto temp_2 = it2.get();
-    //             if (temp_2->rand == temp->rand)
-    //             {
-    //                 std::fwrite(&count, sizeof(int), 1, file);
-    //             }
-    //             count++;
-    //         }
-    //     }
-    // }
-    fclose(file);
+    // index for rand
+    for (auto it = iterator(); it.has_next(); it.next())
+    {
+        auto temp = it.get();
+        if (temp->rand == nullptr)
+        {
+            int num = -1;
+            std::fwrite(&num, sizeof(int), 1, file);
+        }
+        else
+        {
+            int count = 0;
+            for (auto it2 = this->iterator(); it2.has_next(); it2.next())
+            {
+                auto temp_2 = it2.get();
+                if (temp_2 == temp->rand)
+                {
+                    std::fwrite(&count, sizeof(int), 1, file);
+                    break;
+                }
+                count++;
+            }
+        }
+    }
+    // std::fclose(file);
 }
 
 void List::Deserialize(FILE * file)
@@ -199,23 +189,69 @@ void List::Deserialize(FILE * file)
     if (file == NULL)
     {
         std::cout << "Error opening file for reading" << std::endl;
+        return;
     }
     else
     {
         std::cout << "Sucsess opening file for reading" << std::endl;
     }
 
+    // remove old data
+    while (head != tail)
+    {
+        ListNode * temp = head;
+        head = head->next;
+        delete temp;
+    }
+    delete head;
+
+    // Count
     int count_temp = 0;
     std::fread(&count_temp, sizeof(int), 1, file);
-    std::cout << "Count: " << count_temp << std::endl;
+    // std::cout << "Count: " << count_temp << std::endl;
 
-    ListNode * temp_node;
+    head = new ListNode();
+    tail = head;
+    count = 0;
+
+    // Str
     for (auto i = 0; i < count_temp; i++)
     {
-        std::fread(&temp_node->data, sizeof(temp_node->data), 1, file);
-        std::cout << temp_node->data;
-    }
-    std::cout << std::endl;
+        if (!tail->data.empty())
+        {
+            ListNode * temp = tail;
+            tail = new ListNode();
+            temp->next = tail;
+            tail->prev = temp;
 
-    fclose(file);
+        }
+        int size = 0;
+        std::fread(&size, sizeof(int), 1, file);
+
+        char str[size];
+        std::fread(&str[0], sizeof(char), size, file);
+        tail->data = str;
+        count++;
+
+        // std::cout << tail->data << " ";
+    }
+    // std::cout << std::endl;
+
+    //Indexes
+    // std::cout << "Indexes: ";
+    int indexes[count_temp];
+    std::fread(&indexes, sizeof(int), count_temp, file);
+
+    for (auto i = 0; i < count_temp; i++)
+    {
+        if (indexes[i] >= 0)
+        {
+            AtIndex(i)->rand = AtIndex(indexes[i]);
+        }
+
+        // std::cout << indexes[i] << " ";
+    }
+    // std::cout << std::endl;
+
+    // std::fclose(file);
 }
